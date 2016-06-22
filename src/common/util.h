@@ -34,6 +34,8 @@
  * util.h -- internal definitions for util module
  */
 
+#include "pm_instr.h"
+
 extern unsigned long long Pagesize;
 
 extern int Mmap_no_random;

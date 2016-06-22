@@ -415,7 +415,7 @@ heap_set_run_bucket(struct chunk_run *run, struct bucket *b)
 {
 	VALGRIND_ADD_TO_TX(&run->bucket_vptr, sizeof(run->bucket_vptr));
 	/* mark the bucket associated with this run */
-	run->bucket_vptr = (uint64_t)b;
+	PM_EQU((run->bucket_vptr), ((uint64_t)b));
 	VALGRIND_SET_CLEAN(&run->bucket_vptr, sizeof(run->bucket_vptr));
 	VALGRIND_REMOVE_FROM_TX(&run->bucket_vptr, sizeof(run->bucket_vptr));
 }

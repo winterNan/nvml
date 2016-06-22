@@ -84,8 +84,8 @@ redo_log_store(PMEMobjpool *pop, struct redo_log *redo, size_t index,
 	ASSERTeq(offset & REDO_FINISH_FLAG, 0);
 	ASSERT(index < REDO_NUM_ENTRIES);
 
-	redo[index].offset = offset;
-	redo[index].value = value;
+	PM_EQU((redo[index].offset), (offset));
+	PM_EQU((redo[index].value), (value));
 }
 
 /*
@@ -126,7 +126,7 @@ redo_log_set_last(PMEMobjpool *pop, struct redo_log *redo, size_t index)
 	pop->persist(pop, redo, (index + 1) * sizeof(struct redo_log));
 
 	/* set finish flag of last entry and persist */
-	redo[index].offset |= REDO_FINISH_FLAG;
+	PM_OR_EQU((redo[index].offset), (REDO_FINISH_FLAG));
 	pop->persist(pop, &redo[index].offset, sizeof(redo[index].offset));
 }
 
@@ -147,7 +147,7 @@ redo_log_process(PMEMobjpool *pop, struct redo_log *redo,
 	while ((redo->offset & REDO_FINISH_FLAG) == 0) {
 		val = (uint64_t *)((uintptr_t)pop->addr + redo->offset);
 		VALGRIND_ADD_TO_TX(val, sizeof(*val));
-		*val = redo->value;
+		PM_EQU((*val), (redo->value));
 		VALGRIND_REMOVE_FROM_TX(val, sizeof(*val));
 
 		pop->flush(pop, val, sizeof(uint64_t));

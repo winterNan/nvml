@@ -414,8 +414,8 @@ lane_hold(PMEMobjpool *pop, struct lane_section **section,
 	struct lane_info *lane = get_lane_info_record(pop);
 	while (unlikely(lane->lane_idx == UINT64_MAX)) {
 		/* initial wrap to next CL */
-		lane->lane_idx = __sync_fetch_and_add(
-			&pop->lanes_desc.next_lane_idx, LANE_JUMP);
+		PM_EQU((lane->lane_idx), (__sync_fetch_and_add(		\
+			&pop->lanes_desc.next_lane_idx, LANE_JUMP)));
 	} /* handles wraparound */
 
 	uint64_t *llocks = pop->lanes_desc.lane_locks;

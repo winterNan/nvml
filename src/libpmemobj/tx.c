@@ -183,9 +183,9 @@ constructor_tx_alloc(PMEMobjpool *pop, void *ptr, size_t usable_size, void *arg)
 	 * no need to flush and persist because this
 	 * will be done in pre-commit phase
 	 */
-	oobh->type_num = args->type_num;
-	oobh->size = 0;
-	oobh->undo_entry_offset = args->entry_offset;
+	PM_EQU((oobh->type_num), (args->type_num));
+	PM_EQU((oobh->size), (0));
+	PM_EQU((oobh->undo_entry_offset), (args->entry_offset));
 	memset(oobh->unused, 0, sizeof(oobh->unused));
 
 	VALGRIND_REMOVE_FROM_TX(oobh, OBJ_OOB_SIZE);

@@ -82,9 +82,9 @@ alloc_write_header(PMEMobjpool *pop, struct allocation_header *alloc,
 	struct memory_block m, uint64_t size)
 {
 	VALGRIND_ADD_TO_TX(alloc, sizeof(*alloc));
-	alloc->chunk_id = m.chunk_id;
-	alloc->size = size;
-	alloc->zone_id = m.zone_id;
+	PM_EQU((alloc->chunk_id), (m.chunk_id));
+	PM_EQU((alloc->size), (size));
+	PM_EQU((alloc->zone_id), (m.zone_id));
 	VALGRIND_REMOVE_FROM_TX(alloc, sizeof(*alloc));
 	pop->persist(pop, alloc, sizeof(*alloc));
 }
