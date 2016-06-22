@@ -133,6 +133,10 @@ util_init(void)
 		}
 	}
 
+	e = getenv("PMEM_TRACE_ENABLE");
+	if(e && (e[0] == 'y' || e[0] == 'Y'))
+		mtm_enable_trace = 1;
+
 #if defined(USE_VG_PMEMCHECK) || defined(USE_VG_HELGRIND) ||\
 	defined(USE_VG_MEMCHECK)
 	_On_valgrind = RUNNING_ON_VALGRIND;

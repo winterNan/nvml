@@ -58,8 +58,24 @@ libpmemobj_init(void)
 			PMEMOBJ_LOG_FILE_VAR, PMEMOBJ_MAJOR_VERSION,
 			PMEMOBJ_MINOR_VERSION);
 	LOG(3, NULL);
+
+        gettimeofday(&glb_time, NULL);
+        glb_tv_sec  = (unsigned long long) glb_time.tv_sec;
+        glb_tv_usec = (unsigned long long) glb_time.tv_usec;
+        glb_start_time = glb_tv_sec * 1000000 + glb_tv_usec;
+
+        pthread_spin_init(&tbuf_lock, PTHREAD_PROCESS_SHARED);
+        /* tbuf = (char*)malloc(MAX_TBUF_SZ); To avoid interaction with M's hoard */
+        tbuf = (char*)mmap(0, MAX_TBUF_SZ, PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+        /* MAZ_TBUF_SZ influences how often we compress and hence the overall execution speed. */
+        if(!tbuf) {
+		mtm_enable_trace = 0;
+                fprintf(stderr, "Failed to allocate trace buffer. Disabled tracing.");
+	}
+
 	util_init();
 	obj_init();
+
 }
 
 /*

@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/mman.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
