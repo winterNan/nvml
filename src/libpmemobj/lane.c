@@ -215,17 +215,17 @@ lane_boot(PMEMobjpool *pop)
 {
 	int err = 0;
 
-	pop->lanes_desc.lane = Malloc(sizeof(struct lane) * pop->nlanes);
+	PM_EQU((pop->lanes_desc.lane), (Malloc(sizeof(struct lane) * pop->nlanes)));
 	if (pop->lanes_desc.lane == NULL) {
 		err = ENOMEM;
 		ERR("!Malloc of volatile lanes");
 		goto error_lanes_malloc;
 	}
 
-	pop->lanes_desc.next_lane_idx = 0;
+	PM_EQU((pop->lanes_desc.next_lane_idx), (0));
 
-	pop->lanes_desc.lane_locks =
-		Zalloc(sizeof(*pop->lanes_desc.lane_locks) * pop->nlanes);
+	PM_EQU((pop->lanes_desc.lane_locks),	\
+		(Zalloc(sizeof(*pop->lanes_desc.lane_locks) * pop->nlanes)));
 	if (pop->lanes_desc.lane_locks == NULL) {
 		ERR("!Malloc for lane locks");
 		goto error_locks_malloc;
@@ -253,10 +253,10 @@ error_lane_init:
 		lane_destroy(pop, &pop->lanes_desc.lane[i - 1]);
 
 	Free(pop->lanes_desc.lane_locks);
-	pop->lanes_desc.lane_locks = NULL;
+	PM_EQU((pop->lanes_desc.lane_locks), (NULL));
 error_locks_malloc:
 	Free(pop->lanes_desc.lane);
-	pop->lanes_desc.lane = NULL;
+	PM_EQU((pop->lanes_desc.lane), (NULL));
 error_lanes_malloc:
 	return err;
 }

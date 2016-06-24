@@ -59,7 +59,7 @@ extern unsigned long long glb_tv_sec, glb_tv_usec, glb_start_time;
 		({mtm_tid = syscall(SYS_gettid); mtm_tid;}) : mtm_tid), \
 	(time_since_start)				
 
-#ifdef _ENABLE_TRACE
+#ifdef _ENABLE_TRACE 
 #define pm_trace_print(format, args ...)		\
     {							\
 	if(mtm_enable_trace) {				\
@@ -247,6 +247,18 @@ extern unsigned long long glb_tv_sec, glb_tv_usec, glb_start_time;
                         LOC1,                   	\
                         LOC2);                  	\
             strcpy(pm_dst, src);                    	\
+    })
+
+#define PM_STRNCPY(pm_dst, src, len)                   	\
+    ({                                              	\
+            PM_TRACE("%d:%llu:%s:%p:%u:%s:%d\n",     	\
+			TENTRY_ID,		    	\
+                        PM_WRT_MARKER,              	\
+                        (pm_dst),                   	\
+                        (int)len,    	    		\
+                        LOC1,                   	\
+                        LOC2);                  	\
+            strncpy(pm_dst, src, len);                 	\
     })
 
 #define PM_MOVNTI(pm_dst, count, copied)            	\

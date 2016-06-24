@@ -224,8 +224,8 @@ pvector_push_back(struct pvector_context *ctx)
 			ASSERTeq(util_is_zeroed(ctx->vec,
 				sizeof(*ctx->vec)), 1);
 
-			ctx->vec->arrays[0] = OBJ_PTR_TO_OFF(ctx->pop,
-				&ctx->vec->embedded);
+			PM_EQU((ctx->vec->arrays[0]), (OBJ_PTR_TO_OFF(ctx->pop, \
+				&ctx->vec->embedded)));
 
 			ctx->pop->persist(ctx->pop, &ctx->vec->arrays[0],
 				sizeof(ctx->vec->arrays[0]));

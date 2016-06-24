@@ -226,9 +226,9 @@ heap_chunk_write_footer(PMEMobjpool *pop, struct chunk_header *hdr,
 	VALGRIND_DO_MAKE_MEM_UNDEFINED(pop, hdr + size_idx - 1, sizeof(*hdr));
 
 	struct chunk_header f = *hdr;
-	f.type = CHUNK_TYPE_FOOTER;
-	f.size_idx = size_idx;
-	*(hdr + size_idx - 1) = f;
+	PM_EQU((f.type), (CHUNK_TYPE_FOOTER));
+	PM_EQU((f.size_idx), (size_idx));
+	PM_EQU((*(hdr + size_idx - 1)), (f));
 	/* no need to persist, footers are recreated in heap_populate_buckets */
 	VALGRIND_SET_CLEAN(hdr + size_idx - 1, sizeof(f));
 }
@@ -247,7 +247,7 @@ heap_chunk_init(PMEMobjpool *pop, struct chunk_header *hdr,
 	};
 	VALGRIND_DO_MAKE_MEM_UNDEFINED(pop, hdr, sizeof(*hdr));
 
-	*hdr = nhdr; /* write the entire header (8 bytes) at once */
+	PM_EQU((*hdr), (nhdr)); /* write the entire header (8 bytes) at once */
 	pop->persist(pop, hdr, sizeof(*hdr));
 
 	heap_chunk_write_footer(pop, hdr, size_idx);
@@ -269,7 +269,7 @@ heap_zone_init(PMEMobjpool *pop, uint32_t zone_id)
 		.size_idx = size_idx,
 		.magic = ZONE_HEADER_MAGIC,
 	};
-	z->header = nhdr;  /* write the entire header (8 bytes) at once */
+	PM_EQU((z->header), (nhdr));  /* write the entire header (8 bytes) at once */
 	pop->persist(pop, &z->header, sizeof(z->header));
 }
 
@@ -285,25 +285,25 @@ heap_init_run(PMEMobjpool *pop, struct bucket *b, struct chunk_header *hdr,
 
 	/* add/remove chunk_run and chunk_header to valgrind transaction */
 	VALGRIND_ADD_TO_TX(run, sizeof(*run));
-	run->block_size = b->unit_size;
+	PM_EQU((run->block_size), (b->unit_size));
 	pop->persist(pop, &run->block_size, sizeof(run->block_size));
 
 	ASSERT(hdr->type == CHUNK_TYPE_FREE);
 
 	/* set all the bits */
-	memset(run->bitmap, 0xFF, sizeof(run->bitmap));
+	PM_MEMSET((run->bitmap), (0xFF), (sizeof(run->bitmap)));
 
 	unsigned nval = r->bitmap_nval;
 	ASSERT(nval > 0);
 	/* clear only the bits available for allocations from this bucket */
-	memset(run->bitmap, 0, sizeof(uint64_t) * (nval - 1));
-	run->bitmap[nval - 1] = r->bitmap_lastval;
+	PM_MEMSET((run->bitmap), (0), (sizeof(uint64_t) * (nval - 1)));
+	PM_EQU((run->bitmap[nval - 1]), (r->bitmap_lastval));
 	VALGRIND_REMOVE_FROM_TX(run, sizeof(*run));
 
 	pop->persist(pop, run->bitmap, sizeof(run->bitmap));
 
 	VALGRIND_ADD_TO_TX(hdr, sizeof(*hdr));
-	hdr->type = CHUNK_TYPE_RUN;
+	PM_EQU((hdr->type), (CHUNK_TYPE_RUN));
 	VALGRIND_REMOVE_FROM_TX(hdr, sizeof(*hdr));
 
 	pop->persist(pop, hdr, sizeof(*hdr));
@@ -1541,15 +1541,15 @@ heap_boot(PMEMobjpool *pop)
 		goto error_heap_malloc;
 	}
 
-	h->ncaches = heap_get_ncaches();
-	h->caches = Malloc(sizeof(struct bucket_cache) * h->ncaches);
+	PM_EQU((h->ncaches), (heap_get_ncaches()));
+	PM_EQU((h->caches), (Malloc(sizeof(struct bucket_cache) * h->ncaches)));
 	if (h->caches == NULL) {
 		err = ENOMEM;
 		goto error_heap_cache_malloc;
 	}
 
-	h->max_zone = heap_max_zone(pop->heap_size);
-	h->zones_exhausted = 0;
+	PM_EQU((h->max_zone), (heap_max_zone(pop->heap_size)));
+	PM_EQU((h->zones_exhausted), (0));
 
 	util_mutex_init(&h->active_run_lock, NULL);
 
@@ -1564,10 +1564,10 @@ heap_boot(PMEMobjpool *pop)
 	for (int i = 0; i < MAX_RUN_LOCKS; ++i)
 		util_mutex_init(&h->run_locks[i], &lock_attr);
 
-	memset(h->last_drained, 0, sizeof(h->last_drained));
+	PM_MEMSET((h->last_drained), (0), (sizeof(h->last_drained)));
 
-	pop->heap = h;
-	pop->hlayout = heap_get_layout(pop);
+	PM_EQU((pop->heap), (h));
+	PM_EQU((pop->hlayout), (heap_get_layout(pop)));
 
 	bucket_group_init(pop, h->buckets);
 
@@ -1588,7 +1588,7 @@ error_buckets_init:
 	Free(h->caches);
 error_heap_cache_malloc:
 	Free(h);
-	pop->heap = NULL;
+	PM_EQU((pop->heap), (NULL));
 error_heap_malloc:
 	return err;
 }
@@ -1611,7 +1611,7 @@ heap_write_header(struct heap_header *hdr, size_t size)
 	};
 
 	util_checksum(&newhdr, sizeof(newhdr), &newhdr.checksum, 1);
-	*hdr = newhdr;
+	PM_EQU((*hdr), (newhdr));
 }
 
 #ifdef USE_VG_MEMCHECK

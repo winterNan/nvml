@@ -34,6 +34,21 @@
 #
 LIBPMEMOBJ_1.0 {
 	global:
+		mtm_time;
+		mtm_tid;
+		tstr;
+		tsz;
+		tbuf_ptr;
+		tbuf;
+		tbuf_lock;
+		tbuf_sz;
+		mtm_debug_buffer;
+		mtm_enable_trace;
+		glb_time;
+		glb_tv_sec;
+		glb_tv_usec;
+		glb_start_time;
+
 		pmemobj_check_version;
 		pmemobj_set_funcs;
 		pmemobj_errormsg;

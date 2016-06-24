@@ -59,6 +59,23 @@
 static struct cuckoo *pools_ht; /* hash table used for searching by UUID */
 static struct ctree *pools_tree; /* tree used for searching by address */
 
+/* Tracing infrastructure */
+__thread struct timeval mtm_time;
+__thread int mtm_tid = -1;
+
+__thread char tstr[TSTR_SZ];
+__thread int tsz = 0;
+__thread unsigned long long tbuf_ptr = 0;
+
+/* Can we make these thread local ? */
+char *tbuf;
+pthread_spinlock_t tbuf_lock;
+unsigned long long tbuf_sz;
+int mtm_enable_trace = 0;
+int mtm_debug_buffer = 1;
+struct timeval glb_time;
+unsigned long long glb_tv_sec = 0, glb_tv_usec = 0, glb_start_time = 0;
+
 int _pobj_cache_invalidate;
 
 #ifndef _WIN32
@@ -545,31 +562,31 @@ pmemobj_descr_create(PMEMobjpool *pop, const char *layout, size_t poolsize)
 				sizeof(struct pool_hdr));
 
 	/* create the persistent part of pool's descriptor */
-	memset(dscp, 0, OBJ_DSC_P_SIZE);
+	PM_MEMSET((dscp), (0), (OBJ_DSC_P_SIZE));
 	if (layout)
-		strncpy(pop->layout, layout, PMEMOBJ_MAX_LAYOUT - 1);
+		PM_STRNCPY((pop->layout), (layout), (PMEMOBJ_MAX_LAYOUT - 1));
 
 	/* initialize run_id, it will be incremented later */
-	pop->run_id = 0;
+	PM_EQU((pop->run_id), (0));
 	pmem_msync(&pop->run_id, sizeof(pop->run_id));
 
-	pop->lanes_offset = OBJ_LANES_OFFSET;
-	pop->nlanes = OBJ_NLANES;
-	pop->root_offset = 0;
+	PM_EQU((pop->lanes_offset), (OBJ_LANES_OFFSET));
+	PM_EQU((pop->nlanes), (OBJ_NLANES));
+	PM_EQU((pop->root_offset), (0));
 
 	/* zero all lanes */
 	void *lanes_layout = (void *)((uintptr_t)pop +
 						pop->lanes_offset);
 
-	memset(lanes_layout, 0,
-		pop->nlanes * sizeof(struct lane_layout));
+	PM_MEMSET((lanes_layout), (0),				\
+		(pop->nlanes * sizeof(struct lane_layout)));
 	pmem_msync(lanes_layout, pop->nlanes *
 		sizeof(struct lane_layout));
 
-	pop->heap_offset = pop->lanes_offset +
-		pop->nlanes * sizeof(struct lane_layout);
-	pop->heap_offset = (pop->heap_offset + Pagesize - 1) & ~(Pagesize - 1);
-	pop->heap_size = poolsize - pop->heap_offset;
+	PM_EQU((pop->heap_offset), (pop->lanes_offset +		\
+		pop->nlanes * sizeof(struct lane_layout)));
+	PM_EQU((pop->heap_offset), ((pop->heap_offset + Pagesize - 1) & ~(Pagesize - 1)));
+	PM_EQU((pop->heap_size), (poolsize - pop->heap_offset));
 
 	/* initialize heap prior to storing the checksum */
 	if ((errno = heap_init(pop)) != 0) {
@@ -649,29 +666,29 @@ pmemobj_replica_init(PMEMobjpool *pop, int is_pmem)
 	 * run-time state is never loaded from the file, it is always
 	 * created here, so no need to worry about byte-order.
 	 */
-	pop->is_pmem = is_pmem;
-	pop->replica = NULL;
+	PM_EQU((pop->is_pmem), (is_pmem));
+	PM_EQU((pop->replica), (NULL));
 
 	if (pop->is_pmem) {
-		pop->persist_local = pmem_persist;
-		pop->flush_local = pmem_flush;
-		pop->drain_local = pmem_drain;
-		pop->memcpy_persist_local = pmem_memcpy_persist;
-		pop->memset_persist_local = pmem_memset_persist;
+		PM_EQU((pop->persist_local), (pmem_persist));
+		PM_EQU((pop->flush_local), (pmem_flush));
+		PM_EQU((pop->drain_local), (pmem_drain));
+		PM_EQU((pop->memcpy_persist_local), (pmem_memcpy_persist));
+		PM_EQU((pop->memset_persist_local), (pmem_memset_persist));
 	} else {
-		pop->persist_local = (persist_local_fn)pmem_msync;
-		pop->flush_local = (flush_local_fn)pmem_msync;
-		pop->drain_local = drain_empty;
-		pop->memcpy_persist_local = nopmem_memcpy_persist;
-		pop->memset_persist_local = nopmem_memset_persist;
+		PM_EQU((pop->persist_local), ((persist_local_fn)pmem_msync));
+		PM_EQU((pop->flush_local), ((flush_local_fn)pmem_msync));
+		PM_EQU((pop->drain_local), (drain_empty));
+		PM_EQU((pop->memcpy_persist_local), (nopmem_memcpy_persist));
+		PM_EQU((pop->memset_persist_local), (nopmem_memset_persist));
 	}
 
 	/* initially, use variants w/o replication */
-	pop->persist = obj_norep_persist;
-	pop->flush = obj_norep_flush;
-	pop->drain = obj_norep_drain;
-	pop->memcpy_persist = obj_norep_memcpy_persist;
-	pop->memset_persist = obj_norep_memset_persist;
+	PM_EQU((pop->persist), (obj_norep_persist));
+	PM_EQU((pop->flush), (obj_norep_flush));
+	PM_EQU((pop->drain), (obj_norep_drain));
+	PM_EQU((pop->memcpy_persist), (obj_norep_memcpy_persist));
+	PM_EQU((pop->memset_persist), (obj_norep_memset_persist));
 
 	return 0;
 }
@@ -686,17 +703,17 @@ pmemobj_runtime_init(PMEMobjpool *pop, int rdonly, int boot)
 
 	if (pop->replica != NULL) {
 		/* switch to functions that replicate data */
-		pop->persist = obj_rep_persist;
-		pop->flush = obj_rep_flush;
-		pop->drain = obj_rep_drain;
-		pop->memcpy_persist = obj_rep_memcpy_persist;
-		pop->memset_persist = obj_rep_memset_persist;
+		PM_EQU((pop->persist), (obj_rep_persist));
+		PM_EQU((pop->flush), (obj_rep_flush));
+		PM_EQU((pop->drain), (obj_rep_drain));
+		PM_EQU((pop->memcpy_persist), (obj_rep_memcpy_persist));
+		PM_EQU((pop->memset_persist), (obj_rep_memset_persist));
 	}
 
 	/* run_id is made unique by incrementing the previous value */
-	pop->run_id += 2;
+	PM_ADD_EQU((pop->run_id), (2));
 	if (pop->run_id == 0)
-		pop->run_id += 2;
+		PM_ADD_EQU((pop->run_id), (2));
 	pop->persist(pop, &pop->run_id, sizeof(pop->run_id));
 
 	/*
@@ -704,9 +721,9 @@ pmemobj_runtime_init(PMEMobjpool *pop, int rdonly, int boot)
 	 * run-time state is never loaded from the file, it is always
 	 * created here, so no need to worry about byte-order.
 	 */
-	pop->rdonly = rdonly;
+	PM_EQU((pop->rdonly), (rdonly));
 
-	pop->uuid_lo = pmemobj_get_uuid_lo(pop);
+	PM_EQU((pop->uuid_lo), (pmemobj_get_uuid_lo(pop)));
 
 	if (boot) {
 		if ((errno = pmemobj_boot(pop)) != 0)
@@ -780,8 +797,8 @@ pmemobj_create(const char *path, const char *layout, size_t poolsize,
 			sizeof(struct pmemobjpool) -
 			((uintptr_t)&pop->addr - (uintptr_t)&pop->hdr));
 
-		pop->addr = pop;
-		pop->size = rep->repsize;
+		PM_EQU((pop->addr), (pop));
+		PM_EQU((pop->size), (rep->repsize));
 
 		/* create pool descriptor */
 		if (pmemobj_descr_create(pop, layout, set->poolsize) != 0) {
@@ -797,15 +814,15 @@ pmemobj_create(const char *path, const char *layout, size_t poolsize,
 
 		/* link replicas */
 		if (r < set->nreplicas - 1)
-			pop->replica = set->replica[r + 1]->part[0].addr;
+			PM_EQU((pop->replica), (set->replica[r + 1]->part[0].addr));
 	}
 
 	pop = set->replica[0]->part[0].addr;
-	pop->is_master_replica = 1;
+	PM_EQU((pop->is_master_replica), (1));
 
 	for (unsigned r = 1; r < set->nreplicas; r++) {
 		PMEMobjpool *rep = set->replica[r]->part[0].addr;
-		rep->is_master_replica = 0;
+		PM_EQU((rep->is_master_replica), (0));
 	}
 
 	VALGRIND_DO_CREATE_MEMPOOL(pop, 0, 0);
@@ -1671,9 +1688,9 @@ constructor_alloc_root(PMEMobjpool *pop, void *ptr,
 	else
 		pop->memset_persist(pop, ptr, 0, usable_size);
 
-	ro->undo_entry_offset = 0;
-	ro->type_num = POBJ_ROOT_TYPE_NUM;
-	ro->size = carg->size | OBJ_INTERNAL_OBJECT_MASK;
+	PM_EQU((ro->undo_entry_offset), (0));
+	PM_EQU((ro->type_num), (POBJ_ROOT_TYPE_NUM));
+	PM_EQU((ro->size), (carg->size | OBJ_INTERNAL_OBJECT_MASK));
 
 	VALGRIND_REMOVE_FROM_TX(ro, OBJ_OOB_SIZE + usable_size);
 

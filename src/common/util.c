@@ -53,23 +53,6 @@
 #include "out.h"
 #include "valgrind_internal.h"
 
-/* Tracing infrastructure */
-__thread struct timeval mtm_time;
-__thread int mtm_tid = -1;
-
-__thread char tstr[TSTR_SZ];
-__thread int tsz = 0;
-__thread unsigned long long tbuf_ptr = 0;
-
-/* Can we make these thread local ? */
-char *tbuf;
-pthread_spinlock_t tbuf_lock;
-unsigned long long tbuf_sz;
-int mtm_enable_trace = 0;
-int mtm_debug_buffer = 1;
-struct timeval glb_time;
-unsigned long long glb_tv_sec = 0, glb_tv_usec = 0, glb_start_time = 0;
-
 /* library-wide page size */
 unsigned long long Pagesize;
 
@@ -132,10 +115,6 @@ util_init(void)
 			LOG(3, "PMEM_MMAP_HINT set to %p", Mmap_hint);
 		}
 	}
-
-	e = getenv("PMEM_TRACE_ENABLE");
-	if(e && (e[0] == 'y' || e[0] == 'Y'))
-		mtm_enable_trace = 1;
 
 #if defined(USE_VG_PMEMCHECK) || defined(USE_VG_HELGRIND) ||\
 	defined(USE_VG_MEMCHECK)
@@ -293,7 +272,7 @@ util_checksum(void *addr, size_t len, uint64_t *csump, int insert)
 	csum = (uint64_t)hi32 << 32 | lo32;
 
 	if (insert) {
-		*csump = htole64(csum);
+		PM_EQU((*csump), (htole64(csum)));
 		return 1;
 	}
 

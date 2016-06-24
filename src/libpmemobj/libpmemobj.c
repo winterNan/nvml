@@ -71,6 +71,10 @@ libpmemobj_init(void)
         if(!tbuf) {
 		mtm_enable_trace = 0;
                 fprintf(stderr, "Failed to allocate trace buffer. Disabled tracing.");
+	} else {
+	        char *e = getenv("PMEM_TRACE_ENABLE");
+        	if(e && (e[0] == 'y' || e[0] == 'Y'))
+                	mtm_enable_trace = 1;
 	}
 
 	util_init();

@@ -1,4 +1,8 @@
 *.swp
+typsecript
+cscope.out
+*.i
+*.s
 *.o
 make.out
 core

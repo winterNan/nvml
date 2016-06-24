@@ -63,7 +63,7 @@
 #define SET_TX_VAR(_pop, _var, _nval)\
 do {\
 	VALGRIND_ADD_TO_TX(&(_var), sizeof(_var));\
-	(_var) = (_nval);\
+	PM_EQU((_var), (_nval));\
 	VALGRIND_REMOVE_FROM_TX(&(_var), sizeof(_var));\
 } while (0)
 
@@ -186,7 +186,7 @@ constructor_tx_alloc(PMEMobjpool *pop, void *ptr, size_t usable_size, void *arg)
 	PM_EQU((oobh->type_num), (args->type_num));
 	PM_EQU((oobh->size), (0));
 	PM_EQU((oobh->undo_entry_offset), (args->entry_offset));
-	memset(oobh->unused, 0, sizeof(oobh->unused));
+	PM_MEMSET((oobh->unused), (0), (sizeof(oobh->unused)));
 
 	VALGRIND_REMOVE_FROM_TX(oobh, OBJ_OOB_SIZE);
 
@@ -307,7 +307,7 @@ constructor_tx_add_range(PMEMobjpool *pop, void *ptr,
 static inline void
 tx_set_state(PMEMobjpool *pop, struct lane_tx_layout *layout, uint64_t state)
 {
-	layout->state = state;
+	PM_EQU((layout->state), (state));
 	pop->persist(pop, &layout->state, sizeof(layout->state));
 }
 
@@ -318,7 +318,7 @@ static void
 tx_clear_vec_entry(PMEMobjpool *pop, uint64_t *entry)
 {
 	VALGRIND_ADD_TO_TX(entry, sizeof(*entry));
-	*entry = 0;
+	PM_EQU((*entry), (0));
 	pop->persist(pop, entry, sizeof(*entry));
 	VALGRIND_REMOVE_FROM_TX(entry, sizeof(*entry));
 }
@@ -1833,7 +1833,7 @@ pmemobj_tx_free(PMEMoid oid)
 			ERR("free undo log too large");
 			return pmemobj_tx_abort_err(ENOMEM);
 		}
-		*entry = oid.off;
+		PM_EQU((*entry), (oid.off));
 		lane->pop->persist(lane->pop, entry, sizeof(*entry));
 	} else {
 		struct oob_header *oobh = OOB_HEADER_FROM_OID(lane->pop, oid);

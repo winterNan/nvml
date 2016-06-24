@@ -40,6 +40,7 @@
  * See libpmemobj(3) for details.
  */
 
+
 #ifndef LIBPMEMOBJ_H
 #define LIBPMEMOBJ_H 1
 
@@ -57,6 +58,7 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include "../common/pm_instr.h"
 
 /*
  * opaque type internal to libpmemobj
@@ -87,6 +89,7 @@ const char *pmemobj_check_version(
  * Pool management...
  */
 PMEMobjpool *pmemobj_open(const char *path, const char *layout);
+PMEMobjpool *toggle_debug_buffer();
 PMEMobjpool *pmemobj_create(const char *path, const char *layout,
 	size_t poolsize, mode_t mode);
 void pmemobj_close(PMEMobjpool *pop);
