@@ -73,7 +73,7 @@ static PMEMobjpool *mock_pop;
 static void
 drain_empty(void)
 {
-	/* do nothing */
+	PM_FENCE();/* do nothing */
 }
 
 /*

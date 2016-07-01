@@ -44,6 +44,9 @@ LIBPMEMOBJ_1.0 {
 		tbuf_sz;
 		mtm_debug_buffer;
 		mtm_enable_trace;
+		start_buf_drain;
+		end_buf_drain;
+		buf_drain_period;
 		glb_time;
 		glb_tv_sec;
 		glb_tv_usec;

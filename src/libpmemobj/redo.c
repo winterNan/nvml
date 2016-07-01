@@ -124,7 +124,7 @@ redo_log_set_last(PMEMobjpool *pop, struct redo_log *redo, size_t index)
 
 	/* persist all redo log entries */
 	pop->persist(pop, redo, (index + 1) * sizeof(struct redo_log));
-
+	/* freud : start = redo, end = (index+1)*sizeof(redo_log) */
 	/* set finish flag of last entry and persist */
 	PM_OR_EQU((redo[index].offset), (REDO_FINISH_FLAG));
 	pop->persist(pop, &redo[index].offset, sizeof(redo[index].offset));
@@ -163,7 +163,7 @@ redo_log_process(PMEMobjpool *pop, struct redo_log *redo,
 
 	pop->persist(pop, val, sizeof(uint64_t));
 
-	PM_EQU((redo->offset), (0));
+	PM_EQU((redo->offset), (0)); /* Shouldn't this be REDO_FINISH_FLAG */
 
 	pop->persist(pop, &redo->offset, sizeof(redo->offset));
 }

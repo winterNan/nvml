@@ -232,7 +232,7 @@ static void
 predrain_fence_empty(void)
 {
 	LOG(15, NULL);
-
+	PM_FENCE(); /* freud : is this a place-holder ? */
 	VALGRIND_DO_FENCE;
 	/* nothing to do (because CLFLUSH did it for us) */
 }
@@ -244,7 +244,7 @@ static void
 predrain_fence_sfence(void)
 {
 	LOG(15, NULL);
-
+	PM_FENCE();
 	_mm_sfence();	/* ensure CLWB or CLFLUSHOPT completes */
 }
 
@@ -287,7 +287,10 @@ flush_clflush(const void *addr, size_t len)
 	 */
 	for (uptr = (uintptr_t)addr & ~(FLUSH_ALIGN - 1);
 		uptr < (uintptr_t)addr + len; uptr += FLUSH_ALIGN)
+	{
 		_mm_clflush((char *)uptr);
+		PM_FLUSH((uptr), (64), (64));
+	}
 }
 
 /*

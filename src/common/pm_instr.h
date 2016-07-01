@@ -29,7 +29,19 @@
 #define m_out stdout
 #define m_err stderr
 #define TSTR_SZ         128
-#define MAX_TBUF_SZ     512*1024*1024   /* bytes */
+#define MAX_TBUF_SZ     4*512*1024*1024   /* bytes */
+
+/* 
+  Currently, the buffer is 2gb in size since that is the 
+  maximum allowed by mmap. mmap64 fails for some reason and isn't 
+  supported on all systems. If a circular buffer is used, then after
+  a point every insertion into the buffer will be followed by a drain
+  operation which will move one entry into storage after compression.
+  This not only increases the latency of an insertion affecting runtime
+  performance, but underutilizes the capacity of gzip to compress larger
+  blocks and possibly unnecessary disk I/O. In short, please batch movement
+  of data between buffer and storage.
+ */
 
 extern __thread struct timeval mtm_time;
 extern __thread int mtm_tid;
@@ -44,67 +56,69 @@ extern pthread_spinlock_t tbuf_lock;
 extern int mtm_enable_trace;
 extern int mtm_debug_buffer;
 extern struct timeval glb_time;
+extern unsigned long long start_buf_drain, end_buf_drain, buf_drain_period;
 extern unsigned long long glb_tv_sec, glb_tv_usec, glb_start_time;
-
-#define time_since_start				\
-	({						\
-		gettimeofday(&mtm_time, NULL);		\
-		((1000000*mtm_time.tv_sec + 		\
-				mtm_time.tv_usec)	\
-		- (glb_start_time));			\
+/******************************************************************************/
+#define time_since_start							\
+	({									\
+		gettimeofday(&mtm_time, NULL);					\
+		(((1000000*mtm_time.tv_sec + 					\
+				mtm_time.tv_usec)				\
+		- (glb_start_time)) - buf_drain_period);			\
 	})
 
-#define TENTRY_ID					\
-	(mtm_tid == -1 ? 				\
-		({mtm_tid = syscall(SYS_gettid); mtm_tid;}) : mtm_tid), \
+#define TENTRY_ID								\
+	(mtm_tid == -1 ? 							\
+		({mtm_tid = syscall(SYS_gettid); mtm_tid;}) : mtm_tid), 	\
 	(time_since_start)				
 
 #ifdef _ENABLE_TRACE 
-#define pm_trace_print(format, args ...)		\
-    {							\
-	if(mtm_enable_trace) {				\
-	pthread_spin_lock(&tbuf_lock);			\
-       	sprintf(tstr, format, args);    		\
-	tsz = strlen(tstr);				\
-	if(tsz < MAX_TBUF_SZ - tbuf_sz)			\
-	{						\
-		memcpy(tbuf+tbuf_sz, 			\
-				tstr, tsz);		\
-		tbuf_sz += tsz;				\
-	}						\
-	else {						\
-		tbuf_ptr = 0;				\
-		if(mtm_debug_buffer)			\
-		{					\
-			fprintf(m_err, 			\
-			"start_buf_drain - %llu us\n",	\
-				time_since_start);	\
-		}					\
-		while(tbuf_ptr < tbuf_sz)		\
-		{					\
-			tbuf_ptr = tbuf_ptr + 1 + 	\
-				fprintf(m_out,"%s", 	\
-				tbuf + tbuf_ptr);	\
-		}					\
-		tbuf_sz = 0; 				\
-		memset(tbuf,'\0', MAX_TBUF_SZ);		\
-		if(mtm_debug_buffer)			\
-		{					\
-			fprintf(m_err, 			\
-			"end_buf_drain - %llu us\n",	\
-				time_since_start);	\
-		}					\
-		memcpy(tbuf, tstr, tsz);		\
-		tbuf_sz += tsz;				\
-							\
-	}						\
-	pthread_spin_unlock(&tbuf_lock);		\
-	}						\
+#define pm_trace_print(format, args ...)					\
+    {										\
+	if(mtm_enable_trace) {							\
+	pthread_spin_lock(&tbuf_lock);						\
+       	sprintf(tstr, format, args);    					\
+	tsz = strlen(tstr);							\
+	if((unsigned long long)tsz < MAX_TBUF_SZ - tbuf_sz)			\
+	{									\
+		memcpy(tbuf+tbuf_sz, 						\
+				tstr, tsz);					\
+		tbuf_sz += (unsigned long long)tsz;				\
+	}									\
+	else {									\
+		tbuf_ptr = 0;							\
+		if(mtm_debug_buffer)						\
+		{								\
+			fprintf(m_err, 						\
+			"start_buf_drain - %llu us\n",				\
+			(start_buf_drain = time_since_start));			\
+		}								\
+		while(tbuf_ptr < tbuf_sz)					\
+		{								\
+			tbuf_ptr = tbuf_ptr + 1 + 				\
+				fprintf(m_out,"%s", 				\
+				tbuf + tbuf_ptr);				\
+		}								\
+		tbuf_sz = 0; 							\
+		memset(tbuf,'\0', MAX_TBUF_SZ);					\
+		if(mtm_debug_buffer)						\
+		{								\
+			fprintf(m_err, 						\
+			"end_buf_drain - %llu us\n",				\
+			(end_buf_drain = time_since_start));			\
+		}								\
+		memcpy(tbuf, tstr, tsz);					\
+		tbuf_sz += (unsigned long long)tsz;				\
+		buf_drain_period += (end_buf_drain -				\
+					start_buf_drain) + 1;			\
+	}									\
+	pthread_spin_unlock(&tbuf_lock);					\
+	}									\
     }
 #else
 #define pm_trace_print(args ...)	{;}
 #endif
-
+/******************************************************************************/
 #define PM_TRACE                        pm_trace_print
 
 /* Cacheable PM write */
@@ -357,6 +371,9 @@ extern unsigned long long glb_tv_sec, glb_tv_usec, glb_start_time;
                 LOC2);                          	\
     })
 
+#define PM_START_TX	start_txn
+#define PM_END_TX	end_txn
+/******************************************************************************/
 /* PM Persist operations 
  * (done/copied) followed by count to maintain 
  * uniformity with other macros

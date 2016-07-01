@@ -127,10 +127,10 @@ struct heap_layout {
 };
 
 struct allocation_header {
-	uint32_t zone_id;
-	uint32_t chunk_id;
-	uint64_t size;
-};
+	uint32_t zone_id;	/* 4-bytes */
+	uint32_t chunk_id;	/* 4-bytes */
+	uint64_t size;		/* 8-bytes */
+}; /* 16-bytes; no more than 25% of a cache-line ! */
 
 struct lane_alloc_layout {
 	struct redo_log redo[ALLOC_REDO_LOG_SIZE];

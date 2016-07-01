@@ -46,6 +46,31 @@
 #include "obj.h"
 
 /*
+ * Initialize the trace buffer
+ */
+void 
+trace_buf_init()
+{
+        gettimeofday(&glb_time, NULL);
+        glb_tv_sec  = (unsigned long long) glb_time.tv_sec;
+        glb_tv_usec = (unsigned long long) glb_time.tv_usec;
+        glb_start_time = glb_tv_sec * 1000000 + glb_tv_usec;
+
+        pthread_spin_init(&tbuf_lock, PTHREAD_PROCESS_SHARED);
+        /* Don't use malloc to avoid interaction with any userspace allocator like jemalloc */
+        tbuf = (char*)mmap(0, MAX_TBUF_SZ, PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+        /* MAZ_TBUF_SZ influences how often we compress and hence the overall execution speed. */
+        if(!tbuf) {
+		mtm_enable_trace = 0;
+                fprintf(stderr, "Failed to allocate trace buffer. Disabled tracing.");
+	} else {
+	        char *e = getenv("PMEM_TRACE_ENABLE");
+        	if(e && (e[0] == 'y' || e[0] == 'Y'))
+                	mtm_enable_trace = 1;
+	}
+}
+
+/*
  * libpmemobj_init -- load-time initialization for obj
  *
  * Called automatically by the run-time loader.
@@ -59,24 +84,7 @@ libpmemobj_init(void)
 			PMEMOBJ_MINOR_VERSION);
 	LOG(3, NULL);
 
-        gettimeofday(&glb_time, NULL);
-        glb_tv_sec  = (unsigned long long) glb_time.tv_sec;
-        glb_tv_usec = (unsigned long long) glb_time.tv_usec;
-        glb_start_time = glb_tv_sec * 1000000 + glb_tv_usec;
-
-        pthread_spin_init(&tbuf_lock, PTHREAD_PROCESS_SHARED);
-        /* tbuf = (char*)malloc(MAX_TBUF_SZ); To avoid interaction with M's hoard */
-        tbuf = (char*)mmap(0, MAX_TBUF_SZ, PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-        /* MAZ_TBUF_SZ influences how often we compress and hence the overall execution speed. */
-        if(!tbuf) {
-		mtm_enable_trace = 0;
-                fprintf(stderr, "Failed to allocate trace buffer. Disabled tracing.");
-	} else {
-	        char *e = getenv("PMEM_TRACE_ENABLE");
-        	if(e && (e[0] == 'y' || e[0] == 'Y'))
-                	mtm_enable_trace = 1;
-	}
-
+	trace_buf_init();
 	util_init();
 	obj_init();
 
@@ -95,6 +103,7 @@ libpmemobj_fini(void)
 	obj_fini();
 	out_fini();
 }
+
 
 /*
  * pmemobj_check_version -- see if lib meets application version requirements

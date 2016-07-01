@@ -58,7 +58,7 @@ mb_write(void)
 JEMALLOC_INLINE void
 mb_write(void)
 {
-
+	PM_FENCE();
 	asm volatile ("sfence"
 	    : /* Outputs. */
 	    : /* Inputs. */

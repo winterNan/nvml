@@ -324,7 +324,7 @@ palloc_operation(PMEMobjpool *pop,
 			goto out;
 		}
 	}
-
+	/* lane_section *lane */
 	struct lane_alloc_layout *sec =
 		(struct lane_alloc_layout *)lane->layout;
 

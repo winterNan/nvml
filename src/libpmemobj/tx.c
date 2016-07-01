@@ -985,7 +985,7 @@ tx_alloc_common(size_t size, type_num_t type_num, pmalloc_constr constructor)
 
 	struct lane_tx_runtime *lane =
 		(struct lane_tx_runtime *)tx.section->runtime;
-
+	/* This undo log is cleared on line 977 in tx_post_commit */
 	uint64_t *entry_offset = pvector_push_back(lane->undo.ctx[UNDO_ALLOC]);
 	if (entry_offset == NULL) {
 		ERR("allocation undo log too large");
@@ -1203,6 +1203,7 @@ pmemobj_tx_begin(PMEMobjpool *pop, jmp_buf env, ...)
 	va_end(argp);
 
 	ASSERT(err == 0);
+	PM_START_TX();
 	return 0;
 
 err_abort:
@@ -1382,7 +1383,7 @@ pmemobj_tx_end()
 		if (tx.last_errnum)
 			pmemobj_tx_abort(tx.last_errnum);
 	}
-
+	PM_END_TX();
 	return tx.last_errnum;
 }
 

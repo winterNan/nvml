@@ -51,7 +51,7 @@ operation_init(PMEMobjpool *pop, struct operation_context *ctx,
 	struct redo_log *redo)
 {
 	ctx->pop = pop;
-	ctx->redo = redo;
+	ctx->redo = redo; /* points to persistent redo log */
 	ctx->nentries[ENTRY_PERSISTENT] = 0;
 	ctx->nentries[ENTRY_TRANSIENT] = 0;
 }
