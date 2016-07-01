@@ -29,10 +29,10 @@
 #define m_out stdout
 #define m_err stderr
 #define TSTR_SZ         128
-#define MAX_TBUF_SZ     4*512*1024*1024   /* bytes */
+#define MAX_TBUF_SZ     2*512*1024*1024   /* bytes */
 
 /* 
-  Currently, the buffer is 2gb in size since that is the 
+  Currently, the buffer is 1gb in size since that is the 
   maximum allowed by mmap. mmap64 fails for some reason and isn't 
   supported on all systems. If a circular buffer is used, then after
   a point every insertion into the buffer will be followed by a drain
