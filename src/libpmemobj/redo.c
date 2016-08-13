@@ -121,7 +121,7 @@ redo_log_set_last(PMEMobjpool *pop, struct redo_log *redo, size_t index)
 	LOG(15, "redo %p index %zu", redo, index);
 
 	ASSERT(index < REDO_NUM_ENTRIES);
-
+	/* freud : here you are indexing, while processing you move the pointer to redo entry */
 	/* persist all redo log entries */
 	pop->persist(pop, redo, (index + 1) * sizeof(struct redo_log));
 	/* freud : start = redo, end = (index+1)*sizeof(redo_log) */
@@ -163,8 +163,8 @@ redo_log_process(PMEMobjpool *pop, struct redo_log *redo,
 
 	pop->persist(pop, val, sizeof(uint64_t));
 
-	PM_EQU((redo->offset), (0)); /* Shouldn't this be REDO_FINISH_FLAG */
-
+	PM_EQU((redo->offset), (0)); 
+	/* freud : this means the offset from pop is 0 and the redo_log is over */
 	pop->persist(pop, &redo->offset, sizeof(redo->offset));
 }
 

@@ -133,5 +133,6 @@ struct allocation_header {
 }; /* 16-bytes; no more than 25% of a cache-line ! */
 
 struct lane_alloc_layout {
-	struct redo_log redo[ALLOC_REDO_LOG_SIZE];
+	struct redo_log redo[ALLOC_REDO_LOG_SIZE]; /* 10 entries */
+	/* assigned to operation_context->redo */
 };

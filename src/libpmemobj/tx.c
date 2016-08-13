@@ -1834,7 +1834,7 @@ pmemobj_tx_free(PMEMoid oid)
 			ERR("free undo log too large");
 			return pmemobj_tx_abort_err(ENOMEM);
 		}
-		PM_EQU((*entry), (oid.off));
+		PM_EQU((*entry), (oid.off)); /* freud : making an entry in the undo log */
 		lane->pop->persist(lane->pop, entry, sizeof(*entry));
 	} else {
 		struct oob_header *oobh = OOB_HEADER_FROM_OID(lane->pop, oid);

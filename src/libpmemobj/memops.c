@@ -111,7 +111,7 @@ void operation_add_typed_entry(struct operation_context *ctx,
 		en.value = *(uint64_t *)ptr;
 		operation_perform(&en.value, value, type);
 	}
-
+	/* freud : this is a volatile log. wtf! */
 	ctx->entries[en_type][ctx->nentries[en_type]] = en;
 
 	ctx->nentries[en_type]++;

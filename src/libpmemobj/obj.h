@@ -227,5 +227,6 @@ OBJ_OID_IS_VALID(PMEMobjpool *pop, PMEMoid oid)
 		    oid.off < pop->heap_offset + pop->heap_size);
 }
 
+void trace_buf_init(void);
 void obj_init(void);
 void obj_fini(void);

@@ -123,6 +123,7 @@ extern unsigned long long glb_tv_sec, glb_tv_usec, glb_start_time;
 
 /* Cacheable PM write */
 #define PM_WRT_MARKER                   "PM_W"
+#define PM_DWRT_MARKER                  "PM_D"
 
 /* Cacheable PM read */
 #define PM_RD_MARKER                    "PM_R"
@@ -239,11 +240,35 @@ extern unsigned long long glb_tv_sec, glb_tv_usec, glb_start_time;
             memset(pm_dst, val, sz);                	\
     }) 
 
+#define PM_DMEMSET(pm_dst, val, sz)                  	\
+    ({                                              	\
+            PM_TRACE("%d:%llu:%s:%p:%lu:%s:%d\n",    	\
+			TENTRY_ID,		    	\
+                        PM_DWRT_MARKER,              	\
+                        (pm_dst),                   	\
+                        (unsigned long)sz,          	\
+                        LOC1,                   	\
+                        LOC2);                  	\
+            memset(pm_dst, val, sz);                	\
+    }) 
+
 #define PM_MEMCPY(pm_dst, src, sz)                  	\
     ({                                              	\
             PM_TRACE("%d:%llu:%s:%p:%lu:%s:%d\n",    	\
 			TENTRY_ID,		    	\
                         PM_WRT_MARKER,              	\
+                        (pm_dst),                   	\
+                        (unsigned long)sz,          	\
+                        LOC1,                   	\
+                        LOC2);                  	\
+            memcpy(pm_dst, src, sz);                	\
+    })              
+
+#define PM_DMEMCPY(pm_dst, src, sz)                  	\
+    ({                                              	\
+            PM_TRACE("%d:%llu:%s:%p:%lu:%s:%d\n",    	\
+			TENTRY_ID,		    	\
+                        PM_DWRT_MARKER,              	\
                         (pm_dst),                   	\
                         (unsigned long)sz,          	\
                         LOC1,                   	\
