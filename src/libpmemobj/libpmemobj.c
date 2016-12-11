@@ -44,6 +44,7 @@
 #include "out.h"
 #include "lane.h"
 #include "obj.h"
+#include <assert.h>
 
 /*
  * Initialize the trace buffer
@@ -51,6 +52,7 @@
 void 
 trace_buf_init()
 {
+	#ifdef _ENABLE_TRACE
         gettimeofday(&glb_time, NULL);
         glb_tv_sec  = (unsigned long long) glb_time.tv_sec;
         glb_tv_usec = (unsigned long long) glb_time.tv_usec;
@@ -68,6 +70,56 @@ trace_buf_init()
         	if(e && (e[0] == 'y' || e[0] == 'Y'))
                 	mtm_enable_trace = 1;
 	}
+	#elif _ENABLE_FTRACE
+        int debug_fd = -1, ret = 0;
+        assert(trace_marker == -1);
+        assert(tracing_on == -1);
+
+        /* Turn off tracing from previous sessions */
+        debug_fd = open("/sys/kernel/debug/tracing/tracing_on", O_WRONLY);
+        if(debug_fd != -1){ ret = write(debug_fd, "0", 1); }
+        else{ ret = -1; goto fail; }
+        close(debug_fd);
+
+        /* Emtpy trace buffer */
+        debug_fd = open("/sys/kernel/debug/tracing/current_tracer", O_WRONLY);
+        if(debug_fd != -1){ ret = write(debug_fd, "nop", 3); }
+        else{ ret = -2; goto fail; }
+        close(debug_fd);
+
+        /* Pick a routine that EXISTS but will never be called, VVV IMP !*/
+        debug_fd = open("/sys/kernel/debug/tracing/set_ftrace_filter", O_WRONLY);
+        if(debug_fd != -1){ ret = write(debug_fd, "pmfs_mount", 10); }
+        else{ ret = -3; goto fail; }
+        close(debug_fd);
+
+        /* Enable function tracer */
+        debug_fd = open("/sys/kernel/debug/tracing/current_tracer", O_WRONLY);
+        if(debug_fd != -1){ ret = write(debug_fd, "function", 8); }
+        else{ ret = -4; goto fail; }
+        close(debug_fd);
+
+        trace_marker = open("/sys/kernel/debug/tracing/trace_marker", O_WRONLY);
+        if(trace_marker == -1){ ret = -5; goto fail; }
+
+        debug_fd = open("/sys/kernel/debug/tracing/tracing_on", O_WRONLY);
+        if(debug_fd != -1){ ret = write(debug_fd, "1", 1); }
+        else{ ret = -6; goto fail; }
+        close(debug_fd);
+
+
+        char *e = getenv("PMEM_TRACE_ENABLE");
+        if(e && (e[0] == 'y' || e[0] == 'Y')) {
+               	mtm_enable_trace = 1;
+		fprintf(stderr, "tracing enabled.\n");
+	} else {
+               	mtm_enable_trace = 0;
+		fprintf(stderr, "tracing disabled by user.\n");
+	}
+        return;
+fail:
+	fprintf(stderr, "failed to enable tracing. err = %d\n", ret);
+	#endif
 }
 
 /*

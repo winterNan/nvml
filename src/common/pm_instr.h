@@ -1,12 +1,12 @@
 /*
  * Macros to instrument PM reads and writes
- * Author : Sanketh Nalli 
+ * Author : Nalli, S. 
  * Contact: nalli@wisc.edu
  *
  * The value returned by code surrounded by {}
  * is the value returned by last statement in
  * the block. These macros do not perform any
- * operations on the persistent variable itsellu,
+ * operations on the persistent variable itself,
  * and hence do not introduce any extra accesses
  * to persistent memory. 
  * 
@@ -23,6 +23,9 @@
 #include <sys/types.h>
 #include <sys/syscall.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define LOC1 	__func__	/* str ["0"]: can be __func__, __FILE__ */	
 #define LOC2	__LINE__        /* int [0]  : can be __LINE__ */
@@ -55,10 +58,13 @@ extern unsigned long long tbuf_sz;
 extern pthread_spinlock_t tbuf_lock;
 extern int mtm_enable_trace;
 extern int mtm_debug_buffer;
+extern int trace_marker, tracing_on;
 extern struct timeval glb_time;
 extern unsigned long long start_buf_drain, end_buf_drain, buf_drain_period;
 extern unsigned long long glb_tv_sec, glb_tv_usec, glb_start_time;
 /******************************************************************************/
+#ifdef _ENABLE_TRACE 
+/* Customer user-mode, blocking tracer */
 #define time_since_start							\
 	({									\
 		gettimeofday(&mtm_time, NULL);					\
@@ -72,7 +78,6 @@ extern unsigned long long glb_tv_sec, glb_tv_usec, glb_start_time;
 		({mtm_tid = syscall(SYS_gettid); mtm_tid;}) : mtm_tid), 	\
 	(time_since_start)				
 
-#ifdef _ENABLE_TRACE 
 #define pm_trace_print(format, args ...)					\
     {										\
 	if(mtm_enable_trace) {							\
@@ -114,6 +119,17 @@ extern unsigned long long glb_tv_sec, glb_tv_usec, glb_start_time;
 	}									\
 	pthread_spin_unlock(&tbuf_lock);					\
 	}									\
+    }
+#elif _ENABLE_FTRACE
+/* Standard kernel-mode, non-blocking tracer.  */
+#define TENTRY_ID (int)0 ,(unsigned long long)0
+#define pm_trace_print(format, args ...)                                        \
+    {                                                                           \
+        if(mtm_enable_trace) {                                                  \
+                sprintf(tstr, format, args);                                    \
+                tsz = strlen(tstr);                                             \
+                write(trace_marker, tstr+4, tsz-4);                             \
+        }                                                                       \
     }
 #else
 #define pm_trace_print(args ...)	{;}

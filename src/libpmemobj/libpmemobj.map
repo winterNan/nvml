@@ -51,6 +51,7 @@ LIBPMEMOBJ_1.0 {
 		glb_tv_sec;
 		glb_tv_usec;
 		glb_start_time;
+		trace_marker;
 
 		pmemobj_check_version;
 		pmemobj_set_funcs;
