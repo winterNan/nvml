@@ -267,11 +267,11 @@ list_fill_entry_persist(PMEMobjpool *pop, struct list_entry *entry_ptr,
 	LOG(15, NULL);
 
 	VALGRIND_ADD_TO_TX(entry_ptr, sizeof(*entry_ptr));
-	entry_ptr->pe_next.pool_uuid_lo = pop->uuid_lo;
-	entry_ptr->pe_next.off = next_offset;
+	PM_EQU(entry_ptr->pe_next.pool_uuid_lo, pop->uuid_lo);
+	PM_EQU(entry_ptr->pe_next.off, next_offset);
 
-	entry_ptr->pe_prev.pool_uuid_lo = pop->uuid_lo;
-	entry_ptr->pe_prev.off = prev_offset;
+	PM_EQU(entry_ptr->pe_prev.pool_uuid_lo, pop->uuid_lo);
+	PM_EQU(entry_ptr->pe_prev.off, prev_offset);
 	VALGRIND_REMOVE_FROM_TX(entry_ptr, sizeof(*entry_ptr));
 
 	pop->persist(pop, entry_ptr, sizeof(*entry_ptr));

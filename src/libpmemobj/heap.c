@@ -1694,9 +1694,9 @@ heap_init(PMEMobjpool *pop)
 
 	unsigned zones = heap_max_zone(pop->heap_size);
 	for (unsigned i = 0; i < zones; ++i) {
-		memset(&ZID_TO_ZONE(layout, i)->header, 0,
+		PM_MEMSET(&ZID_TO_ZONE(layout, i)->header, 0,
 				sizeof(struct zone_header));
-		memset(&ZID_TO_ZONE(layout, i)->chunk_headers, 0,
+		PM_MEMSET(&ZID_TO_ZONE(layout, i)->chunk_headers, 0,
 				sizeof(struct chunk_header));
 
 		pmem_msync(&ZID_TO_ZONE(layout, i)->header,
@@ -1747,7 +1747,7 @@ heap_cleanup(PMEMobjpool *pop)
 
 	Free(pop->heap);
 
-	pop->heap = NULL;
+	PM_EQU(pop->heap, NULL);
 }
 
 /*

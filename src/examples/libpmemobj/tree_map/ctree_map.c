@@ -77,7 +77,7 @@ ctree_map_new(PMEMobjpool *pop, TOID(struct ctree_map) *map, void *arg)
 
 	TX_BEGIN(pop) {
 		pmemobj_tx_add_range_direct(map, sizeof(*map));
-		*map = TX_ZNEW(struct ctree_map);
+		PM_EQU(*map, TX_ZNEW(struct ctree_map));
 	} TX_ONABORT {
 		ret = 1;
 	} TX_END
@@ -145,7 +145,7 @@ ctree_map_insert_leaf(struct tree_map_entry *p,
 	struct tree_map_entry e, int diff)
 {
 	TOID(struct tree_map_node) new_node = TX_NEW(struct tree_map_node);
-	D_RW(new_node)->diff = diff;
+	PM_EQU(D_RW(new_node)->diff, diff);
 
 	int d = BIT_IS_SET(e.key, D_RO(new_node)->diff);
 
@@ -165,11 +165,11 @@ ctree_map_insert_leaf(struct tree_map_entry *p,
 	}
 
 	/* insert the found destination in the other slot */
-	D_RW(new_node)->entries[!d] = *p;
+	PM_EQU(D_RW(new_node)->entries[!d], *p);
 
 	pmemobj_tx_add_range_direct(p, sizeof(*p));
-	p->key = 0;
-	p->slot = new_node.oid;
+	PM_EQU(p->key, 0);
+	PM_EQU(p->slot, new_node.oid);
 }
 
 /*
@@ -217,7 +217,7 @@ ctree_map_insert(PMEMobjpool *pop, TOID(struct ctree_map) map,
 	TX_BEGIN(pop) {
 		if (p->key == 0 || p->key == key) {
 			pmemobj_tx_add_range_direct(p, sizeof(*p));
-			*p = e;
+			PM_EQU(*p, e);
 		} else {
 			ctree_map_insert_leaf(&D_RW(map)->root, e,
 					find_crit_bit(p->key, key));
@@ -226,6 +226,7 @@ ctree_map_insert(PMEMobjpool *pop, TOID(struct ctree_map) map,
 		ret = 1;
 	} TX_END
 
+	printf("ret = %d\n", ret);
 	return ret;
 }
 

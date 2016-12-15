@@ -89,15 +89,13 @@ create_hashmap(PMEMobjpool *pop, TOID(struct hashmap_tx) hashmap, uint32_t seed)
 	TX_BEGIN(pop) {
 		TX_ADD(hashmap);
 
-		D_RW(hashmap)->seed = seed;
-		D_RW(hashmap)->hash_fun_a =
-				(uint32_t)(1000.0 * rand() / RAND_MAX) + 1;
-		D_RW(hashmap)->hash_fun_b =
-				(uint32_t)(100000.0 * rand() / RAND_MAX);
-		D_RW(hashmap)->hash_fun_p = HASH_FUNC_COEFF_P;
+		PM_EQU((D_RW(hashmap)->seed), (seed));
+		PM_EQU((D_RW(hashmap)->hash_fun_a), ((uint32_t)(1000.0 * rand() / RAND_MAX) + 1));
+		PM_EQU((D_RW(hashmap)->hash_fun_b), ((uint32_t)(100000.0 * rand() / RAND_MAX)));
+		PM_EQU((D_RW(hashmap)->hash_fun_p), (HASH_FUNC_COEFF_P));
 
-		D_RW(hashmap)->buckets = TX_ZALLOC(struct buckets, sz);
-		D_RW(D_RW(hashmap)->buckets)->nbuckets = len;
+		PM_EQU((D_RW(hashmap)->buckets), (TX_ZALLOC(struct buckets, sz)));
+		PM_EQU((D_RW(D_RW(hashmap)->buckets)->nbuckets), (len));
 	} TX_ONABORT {
 		fprintf(stderr, "%s: transaction aborted: %s\n", __func__,
 			pmemobj_errormsg());
@@ -142,7 +140,7 @@ hm_tx_rebuild(PMEMobjpool *pop, TOID(struct hashmap_tx) hashmap, size_t new_len)
 		TX_ADD_FIELD(hashmap, buckets);
 		TOID(struct buckets) buckets_new =
 				TX_ZALLOC(struct buckets, sz_new);
-		D_RW(buckets_new)->nbuckets = new_len;
+		PM_EQU((D_RW(buckets_new)->nbuckets), (new_len));
 		pmemobj_tx_add_range(buckets_old.oid, 0, sz_old);
 
 		for (size_t i = 0; i < D_RO(buckets_old)->nbuckets; ++i) {
@@ -152,15 +150,15 @@ hm_tx_rebuild(PMEMobjpool *pop, TOID(struct hashmap_tx) hashmap, size_t new_len)
 				uint64_t h = hash(&hashmap, &buckets_new,
 						D_RO(en)->key);
 
-				D_RW(buckets_old)->bucket[i] = D_RO(en)->next;
+				PM_EQU((D_RW(buckets_old)->bucket[i]), (D_RO(en)->next));
 
 				TX_ADD_FIELD(en, next);
-				D_RW(en)->next = D_RO(buckets_new)->bucket[h];
-				D_RW(buckets_new)->bucket[h] = en;
+				PM_EQU((D_RW(en)->next), (D_RO(buckets_new)->bucket[h]));
+				PM_EQU((D_RW(buckets_new)->bucket[h]), (en));
 			}
 		}
 
-		D_RW(hashmap)->buckets = buckets_new;
+		PM_EQU((D_RW(hashmap)->buckets), (buckets_new));
 		TX_FREE(buckets_old);
 	} TX_ONABORT {
 		fprintf(stderr, "%s: transaction aborted: %s\n", __func__,
@@ -204,12 +202,12 @@ hm_tx_insert(PMEMobjpool *pop, TOID(struct hashmap_tx) hashmap,
 		TX_ADD_FIELD(hashmap, count);
 
 		TOID(struct entry) e = TX_NEW(struct entry);
-		D_RW(e)->key = key;
-		D_RW(e)->value = value;
-		D_RW(e)->next = D_RO(buckets)->bucket[h];
-		D_RW(buckets)->bucket[h] = e;
+		PM_EQU((D_RW(e)->key), (key));
+		PM_EQU((D_RW(e)->value), (value));
+		PM_EQU((D_RW(e)->next), (D_RO(buckets)->bucket[h]));
+		PM_EQU((D_RW(buckets)->bucket[h]), (e));
 
-		D_RW(hashmap)->count++;
+		PM_EQU((D_RW(hashmap)->count), (D_RW(hashmap)->count+1));
 		num++;
 	} TX_ONABORT {
 		fprintf(stderr, "transaction aborted: %s\n",
@@ -399,7 +397,7 @@ hm_tx_new(PMEMobjpool *pop, TOID(struct hashmap_tx) *map, void *arg)
 	struct hashmap_args *args = arg;
 	int ret = 0;
 	TX_BEGIN(pop) {
-		*map = TX_ZNEW(struct hashmap_tx);
+		PM_EQU((*map), (TX_ZNEW(struct hashmap_tx)));
 
 		uint32_t seed = args ? args->seed : 0;
 		create_hashmap(pop, *map, seed);

@@ -102,13 +102,13 @@ redo_log_store_last(PMEMobjpool *pop, struct redo_log *redo, size_t index,
 	ASSERT(index < REDO_NUM_ENTRIES);
 
 	/* store value of last entry */
-	redo[index].value = value;
+	PM_EQU(redo[index].value, value);
 
 	/* persist all redo log entries */
 	pop->persist(pop, redo, (index + 1) * sizeof(struct redo_log));
 
 	/* store and persist offset of last entry */
-	redo[index].offset = offset | REDO_FINISH_FLAG;
+	PM_EQU(redo[index].offset, (offset | REDO_FINISH_FLAG));
 	pop->persist(pop, &redo[index].offset, sizeof(redo[index].offset));
 }
 

@@ -271,9 +271,9 @@ lane_cleanup(PMEMobjpool *pop)
 		lane_destroy(pop, &pop->lanes_desc.lane[i]);
 
 	Free(pop->lanes_desc.lane);
-	pop->lanes_desc.lane = NULL;
+	PM_EQU(pop->lanes_desc.lane, NULL);
 	Free(pop->lanes_desc.lane_locks);
-	pop->lanes_desc.lane_locks = NULL;
+	PM_EQU(pop->lanes_desc.lane_locks, NULL);
 
 	lane_info_cleanup(pop);
 }

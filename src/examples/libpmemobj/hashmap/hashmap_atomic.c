@@ -94,10 +94,10 @@ create_entry(PMEMobjpool *pop, void *ptr, void *arg)
 	struct entry *e = ptr;
 	struct entry_args *args = arg;
 
-	e->key = args->key;
-	e->value = args->value;
+	PM_EQU(e->key, args->key);
+	PM_EQU(e->value, args->value);
 
-	memset(&e->list, 0, sizeof(e->list));
+	PM_MEMSET(&e->list, 0, sizeof(e->list));
 
 	pmemobj_persist(pop, e, sizeof(*e));
 
@@ -112,7 +112,7 @@ create_buckets(PMEMobjpool *pop, void *ptr, void *arg)
 {
 	struct buckets *b = ptr;
 
-	b->nbuckets = *((size_t *)arg);
+	PM_EQU(b->nbuckets, *((size_t *)arg));
 	pmemobj_memset_persist(pop, &b->bucket, 0,
 			b->nbuckets * sizeof(b->bucket[0]));
 	pmemobj_persist(pop, &b->nbuckets, sizeof(b->nbuckets));
@@ -127,10 +127,10 @@ static void
 create_hashmap(PMEMobjpool *pop, TOID(struct hashmap_atomic) hashmap,
 		uint32_t seed)
 {
-	D_RW(hashmap)->seed = seed;
-	D_RW(hashmap)->hash_fun_a = (uint32_t)(1000.0 * rand() / RAND_MAX) + 1;
-	D_RW(hashmap)->hash_fun_b = (uint32_t)(100000.0 * rand() / RAND_MAX);
-	D_RW(hashmap)->hash_fun_p = HASH_FUNC_COEFF_P;
+	PM_EQU(D_RW(hashmap)->seed, seed);
+	PM_EQU(D_RW(hashmap)->hash_fun_a, (uint32_t)(1000.0 * rand() / RAND_MAX) + 1);
+	PM_EQU(D_RW(hashmap)->hash_fun_b, (uint32_t)(100000.0 * rand() / RAND_MAX));
+	PM_EQU(D_RW(hashmap)->hash_fun_p, HASH_FUNC_COEFF_P);
 
 	size_t len = INIT_BUCKETS_NUM;
 	size_t sz = sizeof(struct buckets) +
@@ -190,7 +190,7 @@ hm_atomic_rebuild_finish(PMEMobjpool *pop, TOID(struct hashmap_atomic) hashmap)
 
 	POBJ_FREE(&D_RO(hashmap)->buckets);
 
-	D_RW(hashmap)->buckets = D_RO(hashmap)->buckets_tmp;
+	PM_EQU(D_RW(hashmap)->buckets, D_RO(hashmap)->buckets_tmp);
 	pmemobj_persist(pop, &D_RW(hashmap)->buckets,
 			sizeof(D_RW(hashmap)->buckets));
 
@@ -201,7 +201,7 @@ hm_atomic_rebuild_finish(PMEMobjpool *pop, TOID(struct hashmap_atomic) hashmap)
 	 * should use transaction API.
 	 * See recovery process in hm_init and TOID_IS_NULL macro definition.
 	 */
-	D_RW(hashmap)->buckets_tmp.oid.off = 0;
+	PM_EQU(D_RW(hashmap)->buckets_tmp.oid.off, 0);
 	pmemobj_persist(pop, &D_RW(hashmap)->buckets_tmp,
 			sizeof(D_RW(hashmap)->buckets_tmp));
 }
@@ -254,7 +254,7 @@ hm_atomic_insert(PMEMobjpool *pop, TOID(struct hashmap_atomic) hashmap,
 		num++;
 	}
 
-	D_RW(hashmap)->count_dirty = 1;
+	PM_EQU(D_RW(hashmap)->count_dirty, 1);
 	pmemobj_persist(pop, &D_RW(hashmap)->count_dirty,
 			sizeof(D_RW(hashmap)->count_dirty));
 
@@ -271,11 +271,11 @@ hm_atomic_insert(PMEMobjpool *pop, TOID(struct hashmap_atomic) hashmap,
 		return -1;
 	}
 
-	D_RW(hashmap)->count++;
+	PM_EQU(D_RW(hashmap)->count, (D_RW(hashmap)->count + 1));
 	pmemobj_persist(pop, &D_RW(hashmap)->count,
 			sizeof(D_RW(hashmap)->count));
 
-	D_RW(hashmap)->count_dirty = 0;
+	PM_EQU(D_RW(hashmap)->count_dirty, 0);
 	pmemobj_persist(pop, &D_RW(hashmap)->count_dirty,
 			sizeof(D_RW(hashmap)->count_dirty));
 
