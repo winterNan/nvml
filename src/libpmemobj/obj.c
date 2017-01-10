@@ -55,6 +55,7 @@
 #include "obj.h"
 #include "sync.h"
 #include "valgrind_internal.h"
+#include <pm_instr.h>
 
 static struct cuckoo *pools_ht; /* hash table used for searching by UUID */
 static struct ctree *pools_tree; /* tree used for searching by address */
@@ -66,10 +67,14 @@ __thread int mtm_tid = -1;
 __thread char tstr[TSTR_SZ];
 __thread int tsz = 0;
 __thread unsigned long long tbuf_ptr = 0;
+__thread int reg_write = 0;
+__thread unsigned long long n_epoch = 0;
+
 
 /* Can we make these thread local ? */
 char *tbuf;
 pthread_spinlock_t tbuf_lock;
+pthread_spinlock_t tot_epoch_lock;
 unsigned long long tbuf_sz;
 int mtm_enable_trace = 0;
 int mtm_debug_buffer = 1;
@@ -77,8 +82,72 @@ int trace_marker = -1, tracing_on = -1;
 struct timeval glb_time;
 unsigned long long start_buf_drain = 0, end_buf_drain = 0, buf_drain_period = 0;
 unsigned long long glb_tv_sec = 0, glb_tv_usec = 0, glb_start_time = 0;
+unsigned long long tot_epoch = 0;
 
 int _pobj_cache_invalidate;
+
+/*
+ * Count the number of epochs on a thread. Tracing must be turned
+ * off for this feature, as it slows down execution thus reducing
+ * the rate of epochs. The strcmp compares at most 4 bytes as the
+ * longest marker is that long, hence adding minimal overhead.
+ *
+ * If a write is encountered, we register it by setting a flag.
+ * If a fence is encountered, we reset the flag and increment
+ * the number of epochs on the thread. These operations are
+ * thread specific and operate on thread-local storage. We do
+ * not instrument reads to PM.
+ *
+ */
+void __pm_trace_print(char* format, ...)
+{
+        va_list __va_list;
+        va_start(__va_list, format);
+        va_arg(__va_list, int); /* ignore first arg */
+        char* marker = va_arg(__va_list, char*);
+        unsigned long long addr = 0;
+
+        if(!strcmp(marker, PM_FENCE_MARKER) ||
+                !strcmp(marker, PM_TX_END)) {
+                /*
+                 * Applications are notorious for issuing
+                 * fences, even when they didn't write to 
+                 * PM. For eg., a fence for making a store
+                 * to local, volatile variable visible.
+                 */
+                if(reg_write) {
+                        n_epoch += 1;
+
+                        pthread_spin_lock(&tot_epoch_lock);
+                        tot_epoch += 1;
+                        pthread_spin_unlock(&tot_epoch_lock);
+			/* can do a printf here or print out at the end */
+                }
+                reg_write = 0;
+
+        } else if(!strcmp(marker, PM_WRT_MARKER) ||
+                !strcmp(marker, PM_DWRT_MARKER) ||
+                !strcmp(marker, PM_DI_MARKER) ||
+                !strcmp(marker, PM_NTI)) {
+                addr = va_arg(__va_list, unsigned long long);
+
+                if((PSEGMENT_RESERVED_REGION_START < addr &&
+                        addr < PSEGMENT_RESERVED_REGION_END))
+                        reg_write = 1;
+        } else;
+        va_end(__va_list);
+}
+
+unsigned long long get_epoch_count(void)
+{
+        return n_epoch;
+}
+
+unsigned long long get_tot_epoch_count(void)
+{
+        return tot_epoch;
+}
+
 
 #ifndef _WIN32
 

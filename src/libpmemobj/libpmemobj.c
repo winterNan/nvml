@@ -119,6 +119,11 @@ trace_buf_init()
         return;
 fail:
 	fprintf(stderr, "failed to enable tracing. err = %d\n", ret);
+	#else
+	/* ensure this code is not called by multiple threads */
+	reg_write = 0;
+	n_epoch = tot_epoch = 0;
+        pthread_spin_init(&tot_epoch_lock, PTHREAD_PROCESS_SHARED);
 	#endif
 }
 

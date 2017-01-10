@@ -52,6 +52,9 @@ LIBPMEMOBJ_1.0 {
 		glb_tv_usec;
 		glb_start_time;
 		trace_marker;
+		__pm_trace_print;
+		get_epoch_count;
+		get_tot_epoch_count;
 
 		pmemobj_check_version;
 		pmemobj_set_funcs;
