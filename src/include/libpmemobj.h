@@ -181,13 +181,13 @@ static const PMEMoid OID_NULL = { 0, 0 };
 
 #define TOID_ASSIGN(o, value)(\
 {\
-	(o).oid = value;\
+	PM_EQU((o).oid, value);\
 	(o); /* to avoid "error: statement with no effect" */\
 })
 
 #else /* _MSC_VER */
 
-#define TOID_ASSIGN(o, value) ((o).oid = value, (o))
+#define TOID_ASSIGN(o, value) (PM_EQU((o).oid, value, (o)))
 
 #endif /* _MSC_VER */
 

@@ -1271,10 +1271,10 @@ constructor_alloc_bytype(PMEMobjpool *pop, void *ptr,
 	struct oob_header *pobj = OOB_HEADER_FROM_PTR(ptr);
 	struct carg_bytype *carg = arg;
 
-	pobj->undo_entry_offset = 0;
-	pobj->type_num = carg->user_type;
-	pobj->size = 0;
-	memset(pobj->unused, 0, sizeof(pobj->unused));
+	PM_EQU(pobj->undo_entry_offset, 0);
+	PM_EQU(pobj->type_num, carg->user_type);
+	PM_EQU(pobj->size, 0);
+	PM_MEMSET(pobj->unused, 0, sizeof(pobj->unused));
 	pop->flush(pop, pobj, sizeof(*pobj));
 
 	VALGRIND_DO_MAKE_MEM_NOACCESS(pop, pobj->unused, sizeof(pobj->unused));

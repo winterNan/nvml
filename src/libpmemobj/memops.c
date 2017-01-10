@@ -186,7 +186,7 @@ operation_process(struct operation_context *ctx)
 
 		VALGRIND_ADD_TO_TX(e->ptr, sizeof(uint64_t));
 
-		*e->ptr = e->value;
+		PM_EQU((*e->ptr), (e->value));
 		pmemobj_persist(ctx->pop, e->ptr, sizeof(uint64_t));
 
 		VALGRIND_REMOVE_FROM_TX(e->ptr, sizeof(uint64_t));
@@ -196,7 +196,7 @@ operation_process(struct operation_context *ctx)
 
 	for (size_t i = 0; i < ctx->nentries[ENTRY_TRANSIENT]; ++i) {
 		e = &ctx->entries[ENTRY_TRANSIENT][i];
-		*e->ptr = e->value;
+		PM_EQU((*e->ptr), (e->value));
 		/*
 		 * Just in case that the entry was transient but in reality
 		 * the variable is on persistent memory. This is true for

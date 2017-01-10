@@ -278,11 +278,11 @@ constructor_tx_add_range(PMEMobjpool *pop, void *ptr,
 				sizeof(struct tx_range) + args->size
 				+ OBJ_OOB_SIZE);
 
-	oobh->size = OBJ_INTERNAL_OBJECT_MASK;
+	PM_EQU(oobh->size, OBJ_INTERNAL_OBJECT_MASK);
 	pop->flush(pop, &oobh->size, sizeof(oobh->size));
 
-	range->offset = args->offset;
-	range->size = args->size;
+	PM_EQU(range->offset, args->offset);
+	PM_EQU(range->size, args->size);
 
 	void *src = OBJ_OFF_TO_PTR(args->pop, args->offset);
 
@@ -1458,7 +1458,7 @@ constructor_tx_range_cache(PMEMobjpool *pop, void *ptr,
 	VALGRIND_ADD_TO_TX(oobh,
 		OBJ_OOB_SIZE + sizeof(struct tx_range_cache));
 
-	oobh->size = OBJ_INTERNAL_OBJECT_MASK;
+	PM_EQU(oobh->size, OBJ_INTERNAL_OBJECT_MASK);
 	pop->flush(pop, &oobh->size, sizeof(oobh->size));
 
 	pop->memset_persist(pop, ptr, 0, sizeof(struct tx_range_cache));
@@ -1542,8 +1542,8 @@ pmemobj_tx_add_small(struct tx_add_range_args *args)
 	pop->memcpy_persist(pop, range->data, src, args->size);
 
 	/* the range is only valid if both size and offset are != 0 */
-	range->size = args->size;
-	range->offset = args->offset;
+	PM_EQU(range->size, args->size);
+	PM_EQU(range->offset, args->offset);
 	pop->persist(pop, range,
 		sizeof(range->offset) + sizeof(range->size));
 

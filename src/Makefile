@@ -37,11 +37,11 @@ include $(TOP)/src/common.inc
 
 TARGETS = libpmem libvmem libpmemblk libpmemlog libpmemobj libpmempool\
 	libvmmalloc 
-ALL_TARGETS = $(TARGETS) librpmem
+ALL_TARGETS = $(TARGETS) librpmem benchmarks
 
 DEBUG_RELEASE_TARGETS = libpmem libvmem libpmemblk libpmemlog libpmemobj\
 	libpmempool libvmmalloc librpmem
-RELEASE_TARGETS = 
+RELEASE_TARGETS = benchmarks
 
 CLEAN_NO_JE_TARGETS = $(ALL_TARGETS) test
 CLEAN_TARGETS = $(CLEAN_NO_JE_TARGETS) jemalloc
