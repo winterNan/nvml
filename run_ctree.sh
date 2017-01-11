@@ -10,6 +10,7 @@ dir=/mnt/pmfs/testfile
 
 ./src/benchmarks/pmembench map_insert -f $dir -d 128 -n 102400 -t 4 -r 1 -T ctree   
 #strace -f -e trace=write ./src/benchmarks/pmembench map_insert -f $dir -d 128 -n 1 -t 1 -r 1 -T ctree   
-# gdb --args ./src/benchmarks/pmembench map_insert -f $dir -d 128 -n 1024 -t 1 -r 1 -T ctree   
+#gdb --args ./src/benchmarks/pmembench map_insert -f $dir -d 128 -n 102400 -t 4 -r 1 -T ctree   
+#gdb --args ./src/benchmarks/pmembench map_insert -f $dir -d 128 -n 1024 -t 1 -r 1 -T ctree   
 
 

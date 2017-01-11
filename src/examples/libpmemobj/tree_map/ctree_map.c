@@ -226,7 +226,8 @@ ctree_map_insert(PMEMobjpool *pop, TOID(struct ctree_map) map,
 		ret = 1;
 	} TX_END
 
-	printf("ret = %d\n", ret);
+	// not needed for now
+	// printf("ret = %d\n", ret);
 	return ret;
 }
 

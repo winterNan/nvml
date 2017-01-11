@@ -46,6 +46,7 @@
 #include <linux/limits.h>
 #include <dirent.h>
 #include <errno.h>
+#include <sys/time.h>
 
 #include "benchmark.h"
 #include "benchmark_worker.h"
@@ -273,6 +274,7 @@ static struct benchmark_clo pmembench_clos[] = {
 	},
 };
 
+extern unsigned long long get_tot_epoch_count(void);
 /*
  * pmembench_get_priv -- return private structure of benchmark
  */
@@ -1201,6 +1203,9 @@ main(int argc, char *argv[])
 	int ret = 0;
 	struct pmembench *pb = calloc(1, sizeof(*pb));
 	assert(pb != NULL);
+	struct timeval start, end;
+	unsigned long long runtime = 0;
+	gettimeofday(&start, NULL);
 
 	/*
 	 * Parse common command line arguments and
@@ -1232,6 +1237,12 @@ main(int argc, char *argv[])
 	}
 
 out:
+	gettimeofday(&end, NULL);
+	runtime = (1000000*end.tv_sec + end.tv_usec) - 
+			(1000000*start.tv_sec + start.tv_usec);
+	fprintf(stderr, "TOTAL EPOCH COUNT : %llu, RUNTIME : %llu us \n", 
+			get_tot_epoch_count(), runtime);
+	fprintf(stderr, "exiting main.\n");
 	free(pb);
 	return ret;
 }
