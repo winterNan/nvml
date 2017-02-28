@@ -6,7 +6,7 @@ export PMEM_MMAP_HINT=0x0000100000000000
 export PMEM_IS_PMEM_FORCE=1
 LD_LIBRARY_PATH=./src/debug:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=./src/debug:$LD_LIBRARY_PATH
-dir=/mnt/pmfs/testfile
+dir=/dev/shm/ctree-testfile
 
 ./src/benchmarks/pmembench map_insert -f $dir -d 128 -n 102400 -t 4 -r 1 -T ctree   
 #strace -f -e trace=write ./src/benchmarks/pmembench map_insert -f $dir -d 128 -n 1 -t 1 -r 1 -T ctree   
