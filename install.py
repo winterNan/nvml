@@ -47,14 +47,14 @@ def main(argv):
         '/src/libpmemobj/libpmemobj.map else compilation fails')
     if args.clean == True:
         print "Cleaning " + workload
-        runCmd("make distclean", "No rule", "Couldn't clean %s dir!" % (workload, ))
+#        runCmd("make distclean", "No rule", "Couldn't clean %s dir!" % (workload, ))
         runCmd("make clean", "No rule", "Couldn't clean %s dir!" % (workload, ))
         runCmd("bash ./src/cleanup.sh", "Error", "Couldn't clean %s dir!" % (workload, ))
 
     if args.build == True:
         print "Building " + workload
         buildCmd = 'make NVML_DEBUG=yes USE_NVML=yes STD=-std=gnu99'\
-        ' EXTRA_CFLAGS="-Wno-error"'
+        ' EXTRA_CFLAGS="-Wno-error" -j8'
         runCmd(buildCmd, "Error", "Couldn't build %s" % (workload,))
 
 if __name__ == "__main__":
