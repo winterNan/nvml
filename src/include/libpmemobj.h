@@ -81,7 +81,7 @@ const char *pmemobj_check_version(
 		unsigned major_required,
 		unsigned minor_required);
 
-#define PMEMOBJ_MIN_POOL ((size_t)(1024 * 1024 * 8)) /* 8 MB */
+#define PMEMOBJ_MIN_POOL ((size_t)(1024 * 1024 * 800)) /* 800 MB */
 #define PMEMOBJ_MAX_ALLOC_SIZE ((size_t)0x3FFDFFFC0)
 #define PMEMOBJ_MAX_LAYOUT ((size_t)1024)
 
