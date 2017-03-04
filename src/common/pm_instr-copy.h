@@ -49,7 +49,7 @@ extern unsigned long long start_buf_drain, end_buf_drain, buf_drain_period;
 extern unsigned long long glb_tv_sec, glb_tv_usec, glb_start_time;
 
 
-#ifdef _ENABLE_TRACE
+#ifdef _ENABLE_UTRACE
 /* Custom user-mode, blocking tracer */
 #define time_since_start							\
 	({									\

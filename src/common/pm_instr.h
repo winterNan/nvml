@@ -76,7 +76,7 @@ extern unsigned long long get_tot_epoch_count(void);
 #define PSEGMENT_RESERVED_REGION_END     (PSEGMENT_RESERVED_REGION_START +    \
                                           PSEGMENT_RESERVED_REGION_SIZE)
 /******************************************************************************/
-#ifdef _ENABLE_TRACE 
+#ifdef _ENABLE_UTRACE 
 /* Customer user-mode, blocking tracer */
 #define time_since_start							\
 	({									\

@@ -52,7 +52,7 @@
 void 
 trace_buf_init()
 {
-	#ifdef _ENABLE_TRACE
+	#ifdef _ENABLE_UTRACE
         gettimeofday(&glb_time, NULL);
         glb_tv_sec  = (unsigned long long) glb_time.tv_sec;
         glb_tv_usec = (unsigned long long) glb_time.tv_usec;
