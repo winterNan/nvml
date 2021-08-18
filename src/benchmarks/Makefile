@@ -123,6 +123,11 @@ CFLAGS += $(shell $(PKG_CONFIG) --cflags glib-2.0)
 LIBS += $(shell $(PKG_CONFIG) --libs glib-2.0)
 endif
 
+ifeq ($(STATIC_LINK_PMEMBENCH), yes)
+CFLAGS += -static -static-libgcc
+LDFLAGS += -static
+endif
+
 LIBMAP_DIR=../examples/libpmemobj/map
 LIBMAP=$(LIBMAP_DIR)/libmap.a
 

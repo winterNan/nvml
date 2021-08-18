@@ -172,6 +172,9 @@ $(objdir) $(LIB_OUTDIR):
 $(LIB_SO_REAL): $(OBJS) $(EXTRA_OBJS) $(LIB_MAP) $(MAKEFILE_DEPS)
 	$(CC) $(LDFLAGS) -shared -Wl,--version-script=$(LIB_MAP),-soname,$(LIB_SONAME) -o $@ $(OBJS) $(EXTRA_OBJS) $(LIBS)
 
+# $(LIB_SO_REAL): $(OBJS) $(EXTRA_OBJS) $(LIB_MAP) $(MAKEFILE_DEPS)
+#	$(CC) $(LDFLAGS) -Wl,--version-script=$(LIB_MAP),-soname,$(LIB_SONAME) -o $@ $(OBJS) $(EXTRA_OBJS) $(LIBS)
+
 $(LIB_SO_SONAME): $(LIB_SO_REAL) $(MAKEFILE_DEPS)
 	$(LN) -sf $(shell basename $<) $@
 
